@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manajemen Data KTP</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #1a56db;
+            --primary-dark: #1e429f;
+            --success: #057a55;
+            --danger: #c81e1e;
+            --warning: #92400e;
+            --bg: #f3f4f6;
+            --card: #ffffff;
+            --border: #e5e7eb;
+            --text: #111827;
+            --text-muted: #6b7280;
+            --radius: 10px;
+            --shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* ─── Header ─── */
+        header {
+            background: linear-gradient(135deg, #1e3a8a 0%, #1a56db 100%);
+            color: white;
+            padding: 20px 32px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            box-shadow: 0 4px 12px rgba(30,58,138,0.35);
+        }
+
+        header .logo {
+            width: 44px;
+            height: 44px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+        }
+
+        header h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        header p {
+            font-size: 0.82rem;
+            opacity: 0.8;
+            margin-top: 2px;
+        }
+
+        /* ─── Layout ─── */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 28px 20px;
+        }
+
+        /* ─── Toast Notification ─── */
+        #toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .toast {
+            min-width: 300px;
+            padding: 14px 18px;
+            border-radius: var(--radius);
+            color: white;
+            font-weight: 500;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: var(--shadow-lg);
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(120%); opacity: 0; }
+            to   { transform: translateX(0);    opacity: 1; }
+        }
+
+        @keyframes slideOut {
+            from { transform: translateX(0);    opacity: 1; }
+            to   { transform: translateX(120%); opacity: 0; }
+        }
+
+        .toast.success { background: #059669; }
+        .toast.error   { background: #dc2626; }
+        .toast.warning { background: #d97706; }
+        .toast.info    { background: #2563eb; }
+
+        /* ─── Card ─── */
+        .card {
+            background: var(--card);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            margin-bottom: 24px;
+        }
+
+        .card-header {
+            padding: 18px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .card-header h2 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-body {
+            padding: 24px;
+        }
+
+        /* ─── Form ─── */
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 16px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        label {
+            font-size: 0.83rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        input, select, textarea {
+            padding: 10px 14px;
+            border: 1.5px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.93rem;
+            color: var(--text);
+            background: white;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            outline: none;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(26,86,219,0.12);
+        }
+
+        input.error-field, select.error-field {
+            border-color: #ef4444;
+        }
+
+        .field-error {
+            color: #ef4444;
+            font-size: 0.78rem;
+            margin-top: 2px;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        /* ─── Buttons ─── */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 10px 18px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.18s;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(26,86,219,0.3);
+        }
+
+        .btn-secondary {
+            background: var(--bg);
+            color: var(--text-muted);
+            border: 1.5px solid var(--border);
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #e5e7eb;
+        }
+
+        .btn-danger {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .btn-danger:hover:not(:disabled) {
+            background: #dc2626;
+            color: white;
+        }
+
+        .btn-warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .btn-warning:hover:not(:disabled) {
+            background: #d97706;
+            color: white;
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 0.82rem;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+        }
+
+        /* ─── Table ─── */
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        thead th {
+            background: #f9fafb;
+            padding: 12px 16px;
+            text-align: left;
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid var(--border);
+            transition: background 0.15s;
+        }
+
+        tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        tbody tr:hover {
+            background: #f9fafb;
+        }
+
+        td {
+            padding: 13px 16px;
+            color: var(--text);
+            vertical-align: middle;
+        }
+
+        td.actions {
+            white-space: nowrap;
+            display: flex;
+            gap: 8px;
+        }
+
+        /* ─── Badge ─── */
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .badge-blue   { background: #dbeafe; color: #1e40af; }
+        .badge-pink   { background: #fce7f3; color: #9d174d; }
+
+        /* ─── Empty State ─── */
+        .empty-state {
+            text-align: center;
+            padding: 48px 20px;
+            color: var(--text-muted);
+        }
+
+        .empty-state .icon {
+            font-size: 3rem;
+            margin-bottom: 12px;
+        }
+
+        .empty-state p {
+            font-size: 0.95rem;
+        }
+
+        /* ─── Loading Spinner ─── */
+        .spinner {
+            width: 18px;
+            height: 18px;
+            border: 2.5px solid rgba(255,255,255,0.4);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            display: inline-block;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* ─── Modal ─── */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: white;
+            border-radius: 14px;
+            padding: 28px;
+            width: 90%;
+            max-width: 420px;
+            box-shadow: var(--shadow-lg);
+            animation: modalIn 0.25s ease;
+        }
+
+        @keyframes modalIn {
+            from { transform: scale(0.9); opacity: 0; }
+            to   { transform: scale(1);   opacity: 1; }
+        }
+
+        .modal h3 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .modal p {
+            color: var(--text-muted);
+            margin-bottom: 22px;
+            line-height: 1.5;
+        }
+
+        .modal .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        /* ─── Stats Bar ─── */
+        .stats-bar {
+            display: flex;
+            gap: 14px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: var(--radius);
+            padding: 16px 20px;
+            flex: 1;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .stat-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            flex-shrink: 0;
+        }
+
+        .stat-icon.blue   { background: #dbeafe; }
+        .stat-icon.green  { background: #d1fae5; }
+        .stat-icon.purple { background: #ede9fe; }
+
+        .stat-label {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--text);
+            line-height: 1;
+        }
+
+        /* ─── Search ─── */
+        .search-bar {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .search-bar input {
+            flex: 1;
+            max-width: 280px;
+        }
+
+        /* ─── Responsive ─── */
+        @media (max-width: 640px) {
+            .stats-bar { flex-direction: column; }
+            .form-grid { grid-template-columns: 1fr; }
+            td.actions { flex-direction: column; }
+            .card-header { flex-direction: column; gap: 12px; align-items: flex-start; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Header -->
+<header>
+    <div class="logo">🪪</div>
+    <div>
+        <h1>Manajemen Data KTP</h1>
+        <p>Sistem Informasi Kependudukan</p>
+    </div>
+</header>
+
+<!-- Toast Container -->
+<div id="toast-container"></div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal-overlay" id="deleteModal">
+    <div class="modal">
+        <h3>⚠️ Hapus Data KTP</h3>
+        <p>Apakah Anda yakin ingin menghapus data KTP ini? Tindakan ini tidak dapat dibatalkan.</p>
+        <div class="modal-actions">
+            <button class="btn btn-secondary" onclick="closeDeleteModal()">Batal</button>
+            <button class="btn btn-danger" id="confirmDeleteBtn" onclick="confirmDelete()">
+                🗑️ Ya, Hapus
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+
+    <!-- Stats -->
+    <div class="stats-bar">
+        <div class="stat-card">
+            <div class="stat-icon blue">📋</div>
+            <div>
+                <div class="stat-label">Total Data</div>
+                <div class="stat-value" id="statTotal">0</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon green">👨</div>
+            <div>
+                <div class="stat-label">Laki-laki</div>
+                <div class="stat-value" id="statLaki">0</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon purple">👩</div>
+            <div>
+                <div class="stat-label">Perempuan</div>
+                <div class="stat-value" id="statPerempuan">0</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form Card -->
+    <div class="card">
+        <div class="card-header">
+            <h2 id="formTitle">➕ Tambah Data KTP</h2>
+            <button class="btn btn-secondary btn-sm" id="toggleFormBtn" onclick="toggleForm()">
+                🔽 Sembunyikan Form
+            </button>
+        </div>
+        <div class="card-body" id="formBody">
+            <form id="ktpForm" onsubmit="return false;">
+                <input type="hidden" id="editId">
+                <div class="form-grid">
+
+                    <div class="form-group">
+                        <label for="nomorKtp">Nomor KTP (NIK)</label>
+                        <input type="text" id="nomorKtp" placeholder="16 digit NIK" maxlength="16">
+                        <span class="field-error" id="err-nomorKtp"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="namaLengkap">Nama Lengkap</label>
+                        <input type="text" id="namaLengkap" placeholder="Nama sesuai KTP">
+                        <span class="field-error" id="err-namaLengkap"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="tanggalLahir">Tanggal Lahir</label>
+                        <input type="date" id="tanggalLahir" max="">
+                        <span class="field-error" id="err-tanggalLahir"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="jenisKelamin">Jenis Kelamin</label>
+                        <select id="jenisKelamin">
+                            <option value="">-- Pilih --</option>
+                            <option value="Laki-laki">Laki-laki</option>
+                            <option value="Perempuan">Perempuan</option>
+                        </select>
+                        <span class="field-error" id="err-jenisKelamin"></span>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label for="alamat">Alamat</label>
+                        <textarea id="alamat" placeholder="Alamat lengkap sesuai KTP"></textarea>
+                        <span class="field-error" id="err-alamat"></span>
+                    </div>
+
+                </div>
+
+                <div class="form-actions">
+                    <button class="btn btn-primary" id="submitBtn" onclick="submitForm()">
+                        ➕ Tambah Data
+                    </button>
+                    <button class="btn btn-secondary" onclick="resetForm()">
+                        🔄 Reset
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Table Card -->
+    <div class="card">
+        <div class="card-header">
+            <h2>📋 Daftar Data KTP</h2>
+            <div class="search-bar">
+                <input type="text" id="searchInput" placeholder="🔍 Cari nama / NIK..." oninput="filterTable()">
+                <button class="btn btn-primary btn-sm" onclick="loadData()">🔃 Refresh</button>
+            </div>
+        </div>
+        <div class="card-body" style="padding: 0;">
+            <div class="table-wrapper">
+                <table id="ktpTable">
+                    <thead>
+                    <tr>
+                        <th>No</th>
+                        <th>Nomor KTP</th>
+                        <th>Nama Lengkap</th>
+                        <th>Alamat</th>
+                        <th>Tanggal Lahir</th>
+                        <th>Jenis Kelamin</th>
+                        <th>Aksi</th>
+                    </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                    <tr>
+                        <td colspan="7">
+                            <div class="empty-state">
+                                <div class="icon">⏳</div>
+                                <p>Memuat data...</p>
+                            </div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    const API_BASE = 'http://localhost:8080/ktp';
+    let allData = [];
+    let deleteTargetId = null;
+    let formVisible = true;
+
+    // ──────────────────────────────────────────────────
+    // TOAST
+    // ──────────────────────────────────────────────────
+    function showToast(message, type = 'info') {
+        const icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
+        const toast = $(`
+            <div class="toast ${type}">
+                <span>${icons[type]}</span>
+                <span>${message}</span>
+            </div>
+        `);
+        $('#toast-container').append(toast);
+        setTimeout(() => {
+            toast.css('animation', 'slideOut 0.3s ease forwards');
+            setTimeout(() => toast.remove(), 300);
+        }, 3500);
+    }
+
+    // ──────────────────────────────────────────────────
+    // FORM TOGGLE
+    // ──────────────────────────────────────────────────
+    function toggleForm() {
+        formVisible = !formVisible;
+        if (formVisible) {
+            $('#formBody').slideDown();
+            $('#toggleFormBtn').text('🔽 Sembunyikan Form');
+        } else {
+            $('#formBody').slideUp();
+            $('#toggleFormBtn').text('🔼 Tampilkan Form');
+        }
+    }
+
+    // Set max date for date input (today)
+    $(document).ready(function () {
+        const today = new Date().toISOString().split('T')[0];
+        $('#tanggalLahir').attr('max', today);
+        loadData();
+    });
+
+    // ──────────────────────────────────────────────────
+    // LOAD DATA (GET ALL)
+    // ──────────────────────────────────────────────────
+    function loadData() {
+        $('#tableBody').html(`
+            <tr><td colspan="7">
+                <div class="empty-state"><div class="icon">⏳</div><p>Memuat data...</p></div>
+            </td></tr>
+        `);
+
+        $.ajax({
+            url: API_BASE,
+            method: 'GET',
+            success: function (res) {
+                allData = res.data || [];
+                renderTable(allData);
+                updateStats(allData);
+            },
+            error: function (xhr) {
+                const msg = xhr.responseJSON?.message || 'Gagal mengambil data dari server';
+                showToast(msg, 'error');
+                $('#tableBody').html(`
+                    <tr><td colspan="7">
+                        <div class="empty-state"><div class="icon">❌</div><p>${msg}</p></div>
+                    </td></tr>
+                `);
+            }
+        });
+    }
+
+    // ──────────────────────────────────────────────────
+    // RENDER TABLE
+    // ──────────────────────────────────────────────────
+    function renderTable(data) {
+        const tbody = $('#tableBody');
+        tbody.empty();
+
+        if (!data || data.length === 0) {
+            tbody.html(`
+                <tr><td colspan="7">
+                    <div class="empty-state">
+                        <div class="icon">📭</div>
+                        <p>Belum ada data KTP yang tersimpan</p>
+                    </div>
+                </td></tr>
+            `);
+            return;
+        }
+
+        data.forEach((ktp, idx) => {
+            const badgeClass = ktp.jenisKelamin === 'Laki-laki' ? 'badge-blue' : 'badge-pink';
+            const icon = ktp.jenisKelamin === 'Laki-laki' ? '👨' : '👩';
+            tbody.append(`
+                <tr>
+                    <td>${idx + 1}</td>
+                    <td><code style="font-size:0.85rem;background:#f3f4f6;padding:2px 6px;border-radius:4px;">${ktp.nomorKtp}</code></td>
+                    <td><strong>${ktp.namaLengkap}</strong></td>
+                    <td style="max-width:200px;word-break:break-word;">${ktp.alamat}</td>
+                    <td>${formatDate(ktp.tanggalLahir)}</td>
+                    <td><span class="badge ${badgeClass}">${icon} ${ktp.jenisKelamin}</span></td>
+                    <td class="actions">
+                        <button class="btn btn-warning btn-sm" onclick="editData(${ktp.id})">✏️ Edit</button>
+                        <button class="btn btn-danger btn-sm" onclick="openDeleteModal(${ktp.id}, '${ktp.namaLengkap}')">🗑️ Hapus</button>
+                    </td>
+                </tr>
+            `);
+        });
+    }
+
+    // ──────────────────────────────────────────────────
+    // STATS
+    // ──────────────────────────────────────────────────
+    function updateStats(data) {
+        const total = data.length;
+        const laki = data.filter(d => d.jenisKelamin === 'Laki-laki').length;
+        const perempuan = data.filter(d => d.jenisKelamin === 'Perempuan').length;
+        $('#statTotal').text(total);
+        $('#statLaki').text(laki);
+        $('#statPerempuan').text(perempuan);
+    }
+
+    // ──────────────────────────────────────────────────
+    // SEARCH / FILTER
+    // ──────────────────────────────────────────────────
+    function filterTable() {
+        const q = $('#searchInput').val().toLowerCase();
+        const filtered = allData.filter(d =>
+            d.namaLengkap.toLowerCase().includes(q) ||
+            d.nomorKtp.toLowerCase().includes(q) ||
+            d.alamat.toLowerCase().includes(q)
+        );
+        renderTable(filtered);
+    }
+
+    // ──────────────────────────────────────────────────
+    // VALIDATE FORM
+    // ──────────────────────────────────────────────────
+    function clearErrors() {
+        $('.field-error').text('');
+        $('input, select, textarea').removeClass('error-field');
+    }
+
+    function setError(fieldId, message) {
+        $(`#err-${fieldId}`).text(message);
+        $(`#${fieldId}`).addClass('error-field');
+    }
+
+    function validateForm() {
+        clearErrors();
+        let valid = true;
+
+        const nomorKtp = $('#nomorKtp').val().trim();
+        if (!nomorKtp) {
+            setError('nomorKtp', 'Nomor KTP tidak boleh kosong');
+            valid = false;
+        } else if (!/^\d{16}$/.test(nomorKtp)) {
+            setError('nomorKtp', 'Nomor KTP harus tepat 16 digit angka');
+            valid = false;
+        }
+
+        const nama = $('#namaLengkap').val().trim();
+        if (!nama) {
+            setError('namaLengkap', 'Nama lengkap tidak boleh kosong');
+            valid = false;
+        }
+
+        const tgl = $('#tanggalLahir').val();
+        if (!tgl) {
+            setError('tanggalLahir', 'Tanggal lahir tidak boleh kosong');
+            valid = false;
+        } else if (new Date(tgl) >= new Date()) {
+            setError('tanggalLahir', 'Tanggal lahir harus di masa lalu');
+            valid = false;
+        }
+
+        const jk = $('#jenisKelamin').val();
+        if (!jk) {
+            setError('jenisKelamin', 'Jenis kelamin harus dipilih');
+            valid = false;
+        }
+
+        const alamat = $('#alamat').val().trim();
+        if (!alamat) {
+            setError('alamat', 'Alamat tidak boleh kosong');
+            valid = false;
+        }
+
+        return valid;
+    }
+
+    // ──────────────────────────────────────────────────
+    // SUBMIT FORM (POST / PUT)
+    // ──────────────────────────────────────────────────
+    function submitForm() {
+        if (!validateForm()) return;
+
+        const editId = $('#editId').val();
+        const isEdit = !!editId;
+
+        const payload = {
+            nomorKtp:    $('#nomorKtp').val().trim(),
+            namaLengkap: $('#namaLengkap').val().trim(),
+            alamat:      $('#alamat').val().trim(),
+            tanggalLahir: $('#tanggalLahir').val(),
+            jenisKelamin: $('#jenisKelamin').val()
+        };
+
+        const method = isEdit ? 'PUT' : 'POST';
+        const url    = isEdit ? `${API_BASE}/${editId}` : API_BASE;
+
+        $('#submitBtn').prop('disabled', true).html('<span class="spinner"></span> Menyimpan...');
+
+        $.ajax({
+            url: url,
+            method: method,
+            contentType: 'application/json',
+            data: JSON.stringify(payload),
+            success: function (res) {
+                showToast(res.message, 'success');
+                resetForm();
+                loadData();
+            },
+            error: function (xhr) {
+                const res = xhr.responseJSON;
+                if (res?.errors) {
+                    // Server-side validation errors
+                    Object.entries(res.errors).forEach(([field, msg]) => {
+                        setError(field, msg);
+                    });
+                    showToast('Terdapat kesalahan validasi', 'warning');
+                } else {
+                    showToast(res?.message || 'Terjadi kesalahan', 'error');
+                }
+            },
+            complete: function () {
+                const isEditNow = !!$('#editId').val();
+                $('#submitBtn').prop('disabled', false)
+                    .html(isEditNow ? '💾 Simpan Perubahan' : '➕ Tambah Data');
+            }
+        });
+    }
+
+    // ──────────────────────────────────────────────────
+    // EDIT (GET BY ID then populate form)
+    // ──────────────────────────────────────────────────
+    function editData(id) {
+        $.ajax({
+            url: `${API_BASE}/${id}`,
+            method: 'GET',
+            success: function (res) {
+                const d = res.data;
+                $('#editId').val(d.id);
+                $('#nomorKtp').val(d.nomorKtp);
+                $('#namaLengkap').val(d.namaLengkap);
+                $('#alamat').val(d.alamat);
+                $('#tanggalLahir').val(d.tanggalLahir);
+                $('#jenisKelamin').val(d.jenisKelamin);
+
+                $('#formTitle').text('✏️ Edit Data KTP — ' + d.namaLengkap);
+                $('#submitBtn').html('💾 Simpan Perubahan');
+
+                // Show form and scroll
+                if (!formVisible) toggleForm();
+                $('html, body').animate({ scrollTop: 0 }, 400);
+                clearErrors();
+                showToast('Form siap untuk diedit', 'info');
+            },
+            error: function (xhr) {
+                showToast(xhr.responseJSON?.message || 'Data tidak ditemukan', 'error');
+            }
+        });
+    }
+
+    // ──────────────────────────────────────────────────
+    // RESET FORM
+    // ──────────────────────────────────────────────────
+    function resetForm() {
+        $('#editId').val('');
+        $('#ktpForm')[0].reset();
+        $('#formTitle').text('➕ Tambah Data KTP');
+        $('#submitBtn').html('➕ Tambah Data');
+        clearErrors();
+    }
+
+    // ──────────────────────────────────────────────────
+    // DELETE MODAL
+    // ──────────────────────────────────────────────────
+    function openDeleteModal(id, name) {
+        deleteTargetId = id;
+        $('#deleteModal p').text(`Apakah Anda yakin ingin menghapus data KTP atas nama "${name}"? Tindakan ini tidak dapat dibatalkan.`);
+        $('#deleteModal').addClass('active');
+    }
+
+    function closeDeleteModal() {
+        deleteTargetId = null;
+        $('#deleteModal').removeClass('active');
+    }
+
+    function confirmDelete() {
+        if (!deleteTargetId) return;
+
+        $('#confirmDeleteBtn').prop('disabled', true).html('<span class="spinner"></span> Menghapus...');
+
+        $.ajax({
+            url: `${API_BASE}/${deleteTargetId}`,
+            method: 'DELETE',
+            success: function (res) {
+                showToast(res.message, 'success');
+                closeDeleteModal();
+                loadData();
+            },
+            error: function (xhr) {
+                showToast(xhr.responseJSON?.message || 'Gagal menghapus data', 'error');
+                closeDeleteModal();
+            },
+            complete: function () {
+                $('#confirmDeleteBtn').prop('disabled', false).html('🗑️ Ya, Hapus');
+            }
+        });
+    }
+
+    // Close modal when clicking overlay
+    $('#deleteModal').on('click', function (e) {
+        if ($(e.target).is('#deleteModal')) closeDeleteModal();
+    });
+
+    // ──────────────────────────────────────────────────
+    // HELPERS
+    // ──────────────────────────────────────────────────
+    function formatDate(dateStr) {
+        if (!dateStr) return '-';
+        const d = new Date(dateStr);
+        return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+    }
+</script>
+</body>
+</html>
